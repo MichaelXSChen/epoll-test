@@ -85,7 +85,7 @@ int main(int argc, char** argv){
 	int fd[NUMCLI];
 	int i;
 	int port, ret;
-	for (i = NUMCLI-1; i >=0; i--){
+	for (i = 0; i < NUMCLI; i++){
 		fd[i] = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
     	if (fd[i] < 0) {
         perror("Can't create socket");
