@@ -116,7 +116,7 @@ int main(int argc, char** argv){
 		for (i = 0; i<NUMCLI; i++){
 			write(fd[i], &input[i], 1);
 		}
-		//sleep(1);
+		usleep(5000);
 	}
 
 

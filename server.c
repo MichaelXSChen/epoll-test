@@ -8,6 +8,8 @@
 #include <fcntl.h>
 #include <string.h>
 
+//#define DBG1
+
 static int create_and_bind (char *port)
 {
   struct addrinfo hints;
@@ -130,76 +132,85 @@ int main (int argc, char *argv[])
   while (1)
     {
       int n, i;
-
+      printf("fd: ");
       n = epoll_wait (efd, events, MAXEVENTS, -1);
-      for (i = 0; i < n; i++)
-  {
-    if ((events[i].events & EPOLLERR) ||
-              (events[i].events & EPOLLHUP) ||
-              (!(events[i].events & EPOLLIN)))
-      {
-              /* An error has occured on this fd, or the socket is not
-                 ready for reading (why were we notified then?) */
-        fprintf (stderr, "epoll error\n");
-        close (events[i].data.fd);
-        continue;
+      for (i = 0; i< n ; i++){
+        printf("%d  ", events[i].data.fd-5);
       }
+      printf("\n" );
 
-    else if (sfd == events[i].data.fd)
-      {
-              /* We have a notification on the listening socket, which
-                 means one or more incoming connections. */
-              while (1)
-                {
-                  struct sockaddr in_addr;
-                  socklen_t in_len;
-                  int infd;
-                  char hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
 
-                  in_len = sizeof in_addr;
-                  infd = accept (sfd, &in_addr, &in_len);
-                  if (infd == -1)
-                    {
-                      if ((errno == EAGAIN) ||
-                          (errno == EWOULDBLOCK))
-                        {
-                          /* We have processed all incoming
-                             connections. */
-                          break;
-                        }
-                      else
-                        {
-                          perror ("accept");
-                          break;
-                        }
-                    }
-
-                  s = getnameinfo (&in_addr, in_len,
-                                   hbuf, sizeof hbuf,
-                                   sbuf, sizeof sbuf,
-                                   NI_NUMERICHOST | NI_NUMERICSERV);
-                  if (s == 0)
-                    {
-                      printf("Accepted connection on descriptor %d "
-                             "(host=%s, port=%s)\n", infd, hbuf, sbuf);
-                    }
-
-                  /* Make the incoming socket non-blocking and add it to the
-                     list of fds to monitor. */
-                  s = make_socket_non_blocking (infd);
-                  if (s == -1)
-                    abort ();
-
-                  event.data.fd = infd;
-                  event.events = EPOLLIN | EPOLLET;
-                  s = epoll_ctl (efd, EPOLL_CTL_ADD, infd, &event);
-                  if (s == -1)
-                    {
-                      perror ("epoll_ctl");
-                      abort ();
-                    }
-                }
+      #ifdef DBG1
+      printf("*******on Epolll reply\n");
+      #endif
+      for (i = 0; i < n; i++)
+        {
+          if ((events[i].events & EPOLLERR) ||
+                    (events[i].events & EPOLLHUP) ||
+                    (!(events[i].events & EPOLLIN)))
+            {
+                    /* An error has occured on this fd, or the socket is not
+                       ready for reading (why were we notified then?) */
+              fprintf (stderr, "epoll error\n");
+              close (events[i].data.fd);
               continue;
+            }
+
+          else if (sfd == events[i].data.fd)
+            {
+                    /* We have a notification on the listening socket, which
+                       means one or more incoming connections. */
+                    while (1)
+                      {
+                        struct sockaddr in_addr;
+                        socklen_t in_len;
+                        int infd;
+                        char hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
+
+                        in_len = sizeof in_addr;
+                        infd = accept (sfd, &in_addr, &in_len);
+                        if (infd == -1)
+                          {
+                            if ((errno == EAGAIN) ||
+                                (errno == EWOULDBLOCK))
+                              {
+                                /* We have processed all incoming
+                                   connections. */
+                                break;
+                              }
+                            else
+                              {
+                                perror ("accept");
+                                break;
+                              }
+                          }
+
+                        s = getnameinfo (&in_addr, in_len,
+                                         hbuf, sizeof hbuf,
+                                         sbuf, sizeof sbuf,
+                                         NI_NUMERICHOST | NI_NUMERICSERV);
+                        if (s == 0)
+                          {
+                            printf("Accepted connection on descriptor %d "
+                                   "(host=%s, port=%s)\n", infd, hbuf, sbuf);
+                          }
+
+                        /* Make the incoming socket non-blocking and add it to the
+                           list of fds to monitor. */
+                        s = make_socket_non_blocking (infd);
+                        if (s == -1)
+                          abort ();
+
+                        event.data.fd = infd;
+                        event.events = EPOLLIN | EPOLLET;
+                        s = epoll_ctl (efd, EPOLL_CTL_ADD, infd, &event);
+                        if (s == -1)
+                          {
+                            perror ("epoll_ctl");
+                            abort ();
+                          }
+                      }
+                    continue;
             }
           else
             {
@@ -236,7 +247,7 @@ int main (int argc, char *argv[])
                     }
 
                   /* Write the buffer to standard output */
-                  s = write (1, buf, count);
+                  //s = write (1, buf, count);
                   if (s == -1)
                     {
                       perror ("write");
@@ -255,6 +266,9 @@ int main (int argc, char *argv[])
                 }
             }
         }
+      #ifdef DBG1
+      printf("**********************\n");
+      #endif
     }
 
   free (events);
